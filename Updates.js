@@ -10,7 +10,6 @@ function batteryLevel() {
 async function parseLevisStadiumEventsXML(content) {
   return new Promise(async function(resolve, reject) {
     try {
-      log('parseLevisStadiumEventsXML');
       const today = new Date();
       const thisWeek = new Date();
       thisWeek.setDate(thisWeek.getDate() + 8);
@@ -20,7 +19,6 @@ async function parseLevisStadiumEventsXML(content) {
       let currentItem = null;
       let currentValue = '';
       xmlParser.didStartElement = name => {
-        log('didStartElement');
         if (name == 'item') {
           currentItem = {
             title: '',
@@ -33,7 +31,6 @@ async function parseLevisStadiumEventsXML(content) {
         }
       }
       xmlParser.didEndElement = name => {
-        log('didEndElement');
         const hasItem = currentItem != null
         if (currentItem && name == 'item') {
           items.push(currentItem);
@@ -49,7 +46,6 @@ async function parseLevisStadiumEventsXML(content) {
       }
 
       xmlParser.didEndDocument = () => {
-        log('didEndDocument');
         for (let index = 0; index < items.length; index += 1) {
             const { title, link } = items[index];
             const dateStringMatches = link.match(/\d{4}-\d{1,2}-\d{1,2}/);
@@ -77,7 +73,6 @@ async function levisStadiumEvents() {
   const eventsUrl = 'http://www.levisstadium.com/events/category/tickets/feed/';
   const req = new Request(eventsUrl);
   const resp = await req.loadString();
-  log('levisStadiumEvents');
   return (await parseLevisStadiumEventsXML(resp)).join('\n');
 }
 
