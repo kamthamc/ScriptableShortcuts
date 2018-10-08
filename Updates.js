@@ -7,19 +7,93 @@ function batteryLevel() {
      return output;
   }
 }
+async function parseLevisStadiumEventsXML(content) {
+  return new Promise(async function(resolve, reject) {
+    try {
+      log('parseLevisStadiumEventsXML');
+      const today = new Date();
+      const thisWeek = new Date();
+      thisWeek.setDate(thisWeek.getDate() + 8);
+      const eventsInThisWeek = [];
+      const xmlParser = new XMLParser(content);
+      const items = [];
+      let currentItem = null;
+      let currentValue = '';
+      xmlParser.didStartElement = name => {
+        log('didStartElement');
+        if (name == 'item') {
+          currentItem = {
+            title: '',
+            link: '',
+          };
+        } else if (currentItem && name == "title") {
+          currentValue = '';
+        } else if (currentItem && name == "link") {
+          currentValue = '';
+        }
+      }
+      xmlParser.didEndElement = name => {
+        log('didEndElement');
+        const hasItem = currentItem != null
+        if (currentItem && name == 'item') {
+          items.push(currentItem);
+          currentItem = null;
+        } else if (currentItem && name == "title") {
+          currentItem.title = currentValue;
+        } else if (currentItem && name == "link") {
+          currentItem.link = currentValue;
+        }
+      }
+      xmlParser.foundCharacters = str => {
+        currentValue += str;
+      }
+
+      xmlParser.didEndDocument = () => {
+        log('didEndDocument');
+        for (let index = 0; index < items.length; index += 1) {
+            const { title, link } = items[index];
+            const dateStringMatches = link.match(/\d{4}-\d{1,2}-\d{1,2}/);
+            if (dateStringMatches && dateStringMatches.length > 0) {
+                const dateValues = dateStringMatches[0].split('-');
+                const newDate = new Date(...dateValues);
+                if (newDate.toDateString() === today.toDateString()) {
+                    eventsInThisWeek.push(`There is an event today, Try to avoid the route. Event: ${title}`)
+                } else if (thisWeek.valueOf() >= newDate.valueOf()) {
+                    eventsInThisWeek.push(`${title} on ${newDate.toDateString()}`);
+                }
+            }
+        }
+        resolve(eventsInThisWeek);
+      };
+      xmlParser.parse();
+    } catch(e) {
+      log(e);
+      resolve([]);
+    };
+  });
+} 
+
+async function levisStadiumEvents() {
+  const eventsUrl = 'http://www.levisstadium.com/events/category/tickets/feed/';
+  const req = new Request(eventsUrl);
+  const resp = await req.loadString();
+  log('levisStadiumEvents');
+  return (await parseLevisStadiumEventsXML(resp)).join('\n');
+}
 
 function calendarUpdates() {
 	
 }
 
-function run() {
+async function run() {
   const text = [];
   text.push(batteryLevel());
   text.push(calendarUpdates());
+  text.push(await levisStadiumEvents());
   return text.filter(text => text && text.length > 0).join('\n');
 }
 
-let siriText = run();
+let siriText = await run();
 if(!siriText) {
   siriText = "There are no updates for today";
 }
