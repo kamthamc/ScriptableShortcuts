@@ -52,13 +52,15 @@ if (config.runsInWidget) {
   preTxt.textOpacity = 0.8
   preTxt.textSize = 28
   const today = new Date()
+  const aDaysAfter = new Date()
+  aDaysAfter.setDate(today.getDate() + 1)
   const yesterday = new Date()
   yesterday.setDate(today.getDate() - 1)
   
   for(let index = 0; index < countriesList.length; index += 1) {
     const cn = countriesList[index];
     // const req = new Request(`https://coronavirus-19-api.herokuapp.com/countries/${countriesList[index]}`)
-    const req1 = new Request(`https://api.coronatracker.com/v3/analytics/newcases/country?countryCode=${cn}&startDate=${formatDate(yesterday)}&endDate=${formatDate(today)}`)
+    const req1 = new Request(`https://api.coronatracker.com/v3/analytics/newcases/country?countryCode=${cn}&startDate=${formatDate(yesterday)}&endDate=${formatDate(aDaysAfter)}`)
     const res1 = (await req1.loadJSON())[0];
     const req2 = new Request(`https://api.coronatracker.com/v3/stats/worldometer/country?countryCode=${cn}`)
     const res2 = (await req2.loadJSON())[0];
