@@ -4,34 +4,12 @@
 
 const countriesList = ['IN', 'US']
 
-const getFormatter = () => {
-  const format = (number) => {
-    let temp = number;
-    const tempStrList = [];
-    while(temp > 0) {
-      tempStrList.push(`${temp % 1000}`);
-      temp = Math.floor(temp/1000);
-    }
-    tempStrList.reverse();
-    if(number >= 1000) {
-      while(tempStrList[tempStrList.length - 1].length < 3) {
-        tempStrList[tempStrList.length - 1] = '0' + tempStrList[tempStrList.length - 1]; 
-      }
-    }
-    return tempStrList.join(',');
-  };
-  if(Intl && Intl.NumberFormat) {
-    return new Intl.NumberFormat('en-US', { maximumSignificantDigits: 3 });
-  } else {
-    return {
-      format
-    }
-  }
-}
-const formatter = getFormatter();
-const formatDate = (date) => {
-  var d = new Date(date),
-      month = '' + (d.getMonth() + 1),
+const formatter = new Intl.NumberFormat('en-US')
+const rtf = new Intl.RelativeTimeFormat('en-US');
+
+
+const formatDate = (d) => {
+  let month = '' + (d.getMonth() + 1),
       day = '' + d.getDate(),
       year = d.getFullYear();
 
@@ -44,6 +22,16 @@ const formatDate = (date) => {
 
   return [year, month, day].join('-');
 }
+const getDateWithAddedDays = (days) => {
+  const date = new Date()
+  date.setDate(date.getDate() + days)
+  return date;
+}
+const relativeTime = (str) => {
+  const date = new Date(str)
+  const now = new Date()
+  return rtf.format(Math.ceil((date.valueOf() - now) / (1000 * 60)), 'minutes')
+}
 if (config.runsInWidget) {
   // create and show widget
   let widget = new ListWidget()
@@ -51,11 +39,8 @@ if (config.runsInWidget) {
   preTxt.textColor = Color.white()
   preTxt.textOpacity = 0.8
   preTxt.textSize = 28
-  const today = new Date()
-  const aDayAfter = new Date()
-  aDayAfter.setDate(today.getDate() + 1)
-  const yesterday = new Date()
-  yesterday.setDate(today.getDate() - 1)
+  const aDayAfter = getDateWithAddedDays(1)
+  const yesterday = getDateWithAddedDays(-1)
   
   for(let index = 0; index < countriesList.length; index += 1) {
     const cn = countriesList[index];
@@ -67,7 +52,7 @@ if (config.runsInWidget) {
     renderCountryStats(widget, res1, res2)
   }
 
-  let lastWidgetUpdate = widget.addText(`Widget updated on ${new Date().toLocaleString()}`)
+  let lastWidgetUpdate = widget.addText(`Widget updated ${relativeTime(new Date())}`)
   lastWidgetUpdate.textColor = Color.lightGray()
   lastWidgetUpdate.textSize = 8
 
@@ -99,7 +84,7 @@ function renderCountryStats(widget, res1, res2) {
   deathTxt.textOpacity = 0.8
   deathTxt.textSize = 16
 
-  let lastWidgetUpdate = widget.addText(`Data updated on ${new Date(res2.lastUpdated).toLocaleString()}`)
+  let lastWidgetUpdate = widget.addText(`updated ${relativeTime(res2.lastUpdated)}`)
   lastWidgetUpdate.textColor = Color.lightGray()
   lastWidgetUpdate.textSize = 8
 }
